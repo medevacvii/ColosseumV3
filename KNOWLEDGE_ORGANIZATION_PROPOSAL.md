@@ -264,6 +264,183 @@ If `git push` reports that no upstream exists, run `git push -u origin albert`. 
 
 Synchronization is explicit: **fetch** learns about remote changes, **pull** brings upstream commits into the current branch, and **push** uploads committed work. Publishing a branch does not merge it into `main`.
 
+## Cherry-pick: propose only selected commits for main
+
+Cherry-pick copies the changes introduced by selected commits onto your current branch, usually creating new commit IDs. It does not merge the whole source branch. The original commits remain on the source branch.
+
+Example: `albert` contains three commits:
+
+| Example commit ID | Change | Include in the pull request? |
+|---|---|---|
+| `a1b2c3d` | Add a finished Rider guide | Yes |
+| `b2c3d4e` | Add Albert's personal planning notes | No |
+| `c3d4e5f` | Correct screenshots used by the Rider guide | Yes |
+
+These IDs are placeholders. Replace them with actual commit IDs from your repository; do not paste the example IDs as real commands.
+
+The suggested workflow is: inspect the commits, create a fresh branch from updated `main`, cherry-pick the selected commits in order, review the result, and submit a pull request to `main`.
+
+### 1. Prepare and fetch the latest commits
+
+Run inside your local ColosseumV3 repository:
+
+```bash
+git status
+git fetch origin
+```
+
+Start with a clean working tree. Commit or stash unfinished work first using the earlier instructions. Close Unreal Editor before changing branches containing Unreal assets.
+
+### 2. Find commits on Albert's remote branch that are not on main
+
+```bash
+git log --reverse --oneline origin/main..origin/albert
+```
+
+Expected result: commits reachable from `origin/albert` but not from `origin/main`, oldest first. Each line starts with a commit ID.
+
+This compares the last-fetched GitHub versions. Unpushed local commits will not appear; to inspect those instead, use `origin/main..albert`.
+
+For an integration branch, substitute its remote name, for example:
+
+```bash
+git log --reverse --oneline origin/main..origin/integration/unreal-jetbrains-rider
+```
+
+Inspect each candidate before choosing it. Replace `COMMIT_ID` with a real ID:
+
+```bash
+git show --stat COMMIT_ID
+git show COMMIT_ID
+```
+
+Check the changed paths, actual changes, and dependencies. A later screenshot correction may depend on the earlier guide commit. If a selected commit depends on an excluded commit, split or revise the work rather than assuming cherry-pick will make it independent.
+
+### 3. Create a fresh review branch from main
+
+```bash
+git switch main
+git pull --ff-only
+git switch -c review/selected-knowledge
+```
+
+Expected result: you are on `review/selected-knowledge`, starting from updated `main`. Choose a new unused branch name for another batch.
+
+If the pull fails because local `main` has diverged, stop and inspect that difference before continuing.
+
+### 4. Copy only the selected commits
+
+Replace the placeholder IDs below with your actual choices:
+
+```bash
+git cherry-pick a1b2c3d
+git cherry-pick c3d4e5f
+```
+
+Run the first command and check its result before running the next. Apply prerequisite commits first, usually oldest to newest. The personal-notes commit `b2c3d4e` is deliberately omitted.
+
+You can also apply several selected commits in one command:
+
+```bash
+git cherry-pick a1b2c3d c3d4e5f
+```
+
+Use either the separate-command method or the combined method, not both. Explicit IDs help avoid accidentally including unwanted commits through a range.
+
+After success, the review branch contains the selected changes. Local `main` and the source branch have not received those new commits.
+
+### 5. If Git reports a conflict
+
+A conflict means Git needs help combining changes. Do not start another cherry-pick while the current one is unresolved.
+
+```bash
+git status
+```
+
+For text files:
+
+1. Open each conflicted file.
+2. Review the competing changes and edit the file to the intended final content.
+3. Remove conflict markers such as `<<<<<<<`, `=======`, and `>>>>>>>`.
+4. Stage each resolved file using its actual path, for example `git add Knowledge/JetBrainsRider/Getting-Started.md`.
+5. Continue:
+
+```bash
+git cherry-pick --continue
+```
+
+For binary Unreal files such as `.uasset` and `.umap`, text editing cannot resolve the conflict. Decide which asset version is required, coordinate with the asset owner, and verify the result in Unreal. If unsure, abort the cherry-pick and prepare an isolated reference example.
+
+To abandon the currently active cherry-pick operation:
+
+```bash
+git cherry-pick --abort
+```
+
+With a combined multi-commit command, abort returns to before that sequence. With separate commands, aborting the second operation leaves a previously successful first cherry-pick in place.
+
+If Git reports an empty cherry-pick, inspect the changes: they may already be present. Use `git cherry-pick --skip` only when you have confirmed that skipping that commit is correct.
+
+### 6. Review exactly what the pull request will contain
+
+```bash
+git fetch origin
+git log --oneline origin/main..HEAD
+git diff --stat origin/main...HEAD
+git diff --name-status origin/main...HEAD
+git diff origin/main...HEAD
+git status
+```
+
+Expected result: the selected guide and its required supporting files appear; excluded personal work does not.
+
+Check that:
+
+- Required screenshots and dependencies are included.
+- Unrelated files and active team maps are absent unless deliberately included.
+- Markdown links work and the guide describes tested behavior accurately.
+- Any included Unreal example opens and works in the intended engine version.
+
+The three-dot diff compares your branch against its common ancestor with `origin/main`, matching the usual pull-request view. If `main` advanced, review the GitHub PR checks and any conflicts too.
+
+### 7. Publish the review branch and open a pull request
+
+```bash
+git push -u origin review/selected-knowledge
+```
+
+On GitHub:
+
+1. Open the ColosseumV3 repository.
+2. Choose **Pull requests → New pull request**.
+3. Set **base** to `main`.
+4. Set **compare** to `review/selected-knowledge`.
+5. Review **Files changed**.
+6. Explain which knowledge was selected and how it was checked.
+7. Create the pull request and follow the team's review process.
+8. Merge only after the required review and checks are satisfied.
+
+Pushing the review branch does not merge anything into `main`.
+
+### 8. After the pull request is merged
+
+```bash
+git switch main
+git pull --ff-only
+```
+
+Expected result: your local `main` now contains the reviewed knowledge. Albert's source branch still contains its original commits and personal notes.
+
+Cherry-picking normally gives copied commits new IDs. Therefore, `git log origin/main..origin/albert` can still list original commits whose changes have already reached `main`. Do not cherry-pick them again solely because they appear in that list. Check the merged PR and compare file changes. `git cherry -v origin/main origin/albert` can help identify patch-equivalent commits, but edited or squashed changes may not be recognized.
+
+Do not later merge all of `albert` into `main` just to finish this workflow: that could also introduce the personal notes you intentionally excluded.
+
+### Selecting files is different from selecting commits
+
+Cherry-pick selects whole commits, including all changed files in each selected commit. It is not a file filter.
+
+If one commit mixes a useful guide with unrelated personal notes or binary assets, prepare a clean commit on a separate branch containing only the intended changes, or split the commit carefully before proposing it. Review the diff and dependencies before publishing. Avoid rewriting a shared branch's history just to tidy a pull request.
+
 ## Small hands-on example
 
 Goal: write a Rider setup guide.
