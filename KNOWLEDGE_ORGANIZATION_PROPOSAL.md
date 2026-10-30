@@ -79,6 +79,191 @@ For later work, short-lived topic branches can make each pull request easier to 
 
 Update this inventory when branches are added, renamed, or removed. Members can agree on the shared outcome while choosing different detailed implementations.
 
+## Commands: switch branches and synchronize with GitHub
+
+Run these commands in a terminal inside your local **ColosseumV3** repository. They work in PowerShell and Git Bash. Use the numbered sections as separate recipes; do not run every example in sequence.
+
+### 1. First-time setup or checking the repository
+
+If you have not downloaded this repository yet, open a terminal in the parent folder where you want it stored:
+
+```bash
+git clone https://github.com/medevacvii/ColosseumV3.git
+cd ColosseumV3
+```
+
+If you already have a local copy, open a terminal in that folder instead of cloning again.
+
+Check the repository and working files:
+
+```bash
+git remote -v
+git status
+git branch --show-current
+```
+
+Expected result: `origin` refers to `medevacvii/ColosseumV3`, and Git shows the current branch. If the remote names or repository differ, resolve that before using the following commands.
+
+Close Unreal Editor before switching branches that contain Unreal assets. Save and commit unfinished work, or stash it, before switching so edits do not accidentally follow you to another branch.
+
+Optional temporary storage for unfinished tracked and untracked files:
+
+```bash
+git stash push -u -m "Unfinished work before switching branches"
+```
+
+Return to the original branch before restoring with `git stash pop`. Restoration can produce conflicts. Ignored files are not included by `-u`.
+
+### 2. See local and remote branches
+
+```bash
+git fetch origin
+git branch
+git branch -r
+git branch -vv
+```
+
+- `fetch` downloads remote branch information and commits; it does not switch branches or update your working files.
+- `git branch` lists local branches. The asterisk marks your current branch.
+- `git branch -r` lists locally recorded remote branches such as `origin/albert`.
+- `git branch -vv` shows upstream tracking and any ahead/behind information relative to the last fetch.
+
+### 3. A branch exists on GitHub: create its local tracking branch
+
+After `git fetch origin`, run **one** matching command below for a branch you have not yet created locally:
+
+| Branch wanted | First-time local creation and switch |
+|---|---|
+| Albert | `git switch --track origin/albert` |
+| Visual Studio | `git switch --track origin/integration/unreal-visual-studio` |
+| JetBrains Rider | `git switch --track origin/integration/unreal-jetbrains-rider` |
+| Main, only if missing locally | `git switch --track origin/main` |
+
+Expected result: Git creates the local branch, switches to it, and configures its upstream to the matching branch on `origin`. Cloning normally creates local `main` already.
+
+If Git says the branch already exists locally, use section 4 instead. If it cannot find `origin/...`, check spelling and run `git branch -r`.
+
+### 4. Switch between branches that already exist locally
+
+Run the single command for the branch you want:
+
+| Destination | Command |
+|---|---|
+| Albert | `git switch albert` |
+| Visual Studio | `git switch integration/unreal-visual-studio` |
+| JetBrains Rider | `git switch integration/unreal-jetbrains-rider` |
+| Main | `git switch main` |
+| Previous branch | `git switch -` |
+
+Confirm the result:
+
+```bash
+git branch --show-current
+git status
+```
+
+Switching changes the checked-out version of the repository. It does not merge branches or automatically download new GitHub changes.
+
+### 5. Download updates for your current branch
+
+Once its upstream is configured:
+
+```bash
+git pull --ff-only
+```
+
+Expected result: your current local branch receives upstream commits, or Git reports it is already up to date. This updates from that branch's upstream, not automatically from `main`.
+
+If Git reports diverging histories, stop and inspect before choosing a merge or rebase:
+
+```bash
+git fetch origin
+git status
+git log --oneline --graph --decorate -15
+```
+
+Do not use a force push or hard reset as a routine synchronization fix.
+
+### 6. A branch exists locally: create its matching GitHub branch
+
+Example: you already have a local branch named `notes/blueprint-learning`, and want to publish it. This is an illustrative name, not an existing branch in the inventory above.
+
+```bash
+git switch notes/blueprint-learning
+git push -u origin notes/blueprint-learning
+```
+
+Expected result: GitHub receives the branch and its committed history, and `-u` sets the upstream. Uncommitted edits are not uploaded.
+
+For an existing local branch from the inventory, the equivalent publish commands are:
+
+| Local branch | Publish and set upstream |
+|---|---|
+| `albert` | `git push -u origin albert` |
+| `integration/unreal-visual-studio` | `git push -u origin integration/unreal-visual-studio` |
+| `integration/unreal-jetbrains-rider` | `git push -u origin integration/unreal-jetbrains-rider` |
+
+If the remote branch already exists, Git attempts a normal update. If it rejects the push because GitHub contains work you do not have, fetch and inspect; do not overwrite teammates' commits.
+
+If both local and remote branches already exist and you only need to connect their tracking relationship, for example:
+
+```bash
+git fetch origin
+git branch --set-upstream-to=origin/albert albert
+```
+
+This sets tracking only; it does not synchronize file contents or reconcile different histories.
+
+### 7. Create a brand-new local branch and publish it
+
+Example: begin a new Blueprint guide from the latest `main`. Start with a clean working tree:
+
+```bash
+git switch main
+git pull --ff-only
+git switch -c notes/blueprint-learning
+git push -u origin notes/blueprint-learning
+```
+
+Expected result: the new branch exists locally and on GitHub, with upstream tracking configured. Choose a different name if that branch already exists. The starting point is `main`; personal drafts on `albert` are not automatically included.
+
+### 8. Everyday example: update this proposal on Albert's branch
+
+First switch to your local `albert` branch (create it using section 3 if needed), then download its latest updates:
+
+```bash
+git switch albert
+git pull --ff-only
+```
+
+Edit and save `KNOWLEDGE_ORGANIZATION_PROPOSAL.md`. Then review and upload that specific document:
+
+```bash
+git diff -- KNOWLEDGE_ORGANIZATION_PROPOSAL.md
+git add KNOWLEDGE_ORGANIZATION_PROPOSAL.md
+git diff --cached
+git commit -m "docs: update knowledge organization proposal"
+git push
+git status
+```
+
+Review all staged changes before committing; previously staged files can also be included in the commit. Expected result: the document is committed and pushed to `albert`, and Git reports the branch is up to date with `origin/albert`.
+
+If `git push` reports that no upstream exists, run `git push -u origin albert`. Authentication and repository write permission are required for publishing.
+
+### Quick reminder
+
+| What you want | Command |
+|---|---|
+| Refresh knowledge of GitHub branches | `git fetch origin` |
+| Bring remote Albert branch onto this computer for the first time | `git switch --track origin/albert` |
+| Switch to an existing local Albert branch | `git switch albert` |
+| Receive updates from the current branch's upstream | `git pull --ff-only` |
+| Publish local Albert branch and set tracking | `git push -u origin albert` |
+| Upload later commits after tracking is set | `git push` |
+
+Synchronization is explicit: **fetch** learns about remote changes, **pull** brings upstream commits into the current branch, and **push** uploads committed work. Publishing a branch does not merge it into `main`.
+
 ## Small hands-on example
 
 Goal: write a Rider setup guide.
