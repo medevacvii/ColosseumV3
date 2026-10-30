@@ -612,6 +612,183 @@ Complete these in order:
 
 Only then expand toward a small prison room, animated trapdoor, interaction prompt, and team-approved C++/Blueprint boundary. A tiny working scene teaches more than an enormous broken replica.
 
+## Plain-language terminology dictionary
+
+Use this as a lookup table. Learn the terms as you encounter them; memorizing the whole list is not a prerequisite.
+
+### Editor and project
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| Engine | Software framework used to build and run the application. | Unreal handles rendering and gameplay. |
+| Editor | Application where you build and test the project. | Place pillars in the arena. |
+| Project | Related settings, assets, maps, and optional code. | ColosseumV3. |
+| Template | Prepared starting project. | Third Person example. |
+| Level / map | A world or part of a world populated with Actors. | Arena practice map. |
+| World | Context containing levels and Actors during editing or play. | The environment currently open. |
+| Viewport | Window showing the scene. | Your view into the arena. |
+| Outliner | List of Actors in the open world. | Find Arena_Floor. |
+| Details panel | Properties of the selected object. | Edit Location Z. |
+| Content Browser / Drawer | Tools for finding and managing assets. | Find a Blueprint asset. |
+| Asset | A saved reusable resource. | Mesh, material, Blueprint, or map. |
+| Actor | Object placed or spawned in a world. | One trapdoor. |
+| Component | Part providing an Actor with appearance, data, or behavior. | DoorPanel mesh component. |
+| Scene Component | Component with a transform that can parent other components. | Invisible Hinge. |
+| Root component | Top component in an Actor's transform hierarchy. | DefaultSceneRoot. |
+| Class | Definition used to create instances. | BP_PracticeTrapdoor. |
+| Instance | One object created from a class. | The north trapdoor. |
+| Spawn | Create an Actor during runtime. | Create a visitor. |
+| Plugin | Optional package extending engine or project functionality. | IDE integration. |
+| Module | Organized unit of compiled code. | A gameplay C++ module. |
+
+### Transforms and dimensions
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| Transform | Location, Rotation, and Scale together. | A pillar's position, orientation, and size multiplier. |
+| Location | Position in a coordinate system. | X=500, Y=0, Z=0. |
+| Rotation | Orientation around axes. | Turn the hinge. |
+| Scale | Multiplier applied to original dimensions. | X=2 doubles original length along X. |
+| Axis | A coordinate direction. | Standard Unreal world convention: X forward, Y right, Z up. |
+| World space | Coordinates measured in the world's frame. | Door location in the arena. |
+| Relative / local space | Coordinates relative to a parent or object's own frame; check the operation used. | Panel offset from Hinge. |
+| Parent / child | Attachment relationship. | Hinge parents DoorPanel. |
+| Pivot | Point around which manipulation or rotation occurs. | Door edge. |
+| Pitch / Yaw / Roll | Rotation around Y / Z / X respectively. | Pitch opens the example door. |
+| Unit | Measurement convention; standard Unreal distance units are centimeters. | 100 units = one meter. |
+| Snap | Constrain editing to increments. | Move walls in fixed steps. |
+
+### Blueprints and programming
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| Blueprint | Visual scripting and class-authoring system. | Create a reusable door. |
+| Blueprint Class | Asset defining a reusable class. | BP_PracticePillar. |
+| Level Blueprint | Scripting associated with a particular level. | One-map demonstration logic. |
+| Graph | Workspace containing connected nodes. | Event Graph. |
+| Node | An operation, event, or value. | Set Relative Rotation. |
+| Pin | Connection point on a node. | Target or New Rotation. |
+| Wire | Connection carrying execution or data. | Hinge reference to Target. |
+| Execution flow | Order in which operations run. | T Pressed → FlipFlop → rotate. |
+| Data flow | Values supplied to operations. | Pitch=-90. |
+| Event | Entry point triggered by something happening. | BeginPlay or key press. |
+| BeginPlay | Event associated with an Actor beginning gameplay. | Initialize door state. |
+| Tick | Update event that can run every frame when enabled. | Continuous behavior. |
+| Variable | Named stored value. | IsOpen. |
+| Boolean | True or false value. | Door open: true. |
+| Integer / Float | Whole number / number allowing fractions. | 3 visitors / 1.5 seconds. |
+| Vector | Numerical components, commonly X/Y/Z. | Movement direction. |
+| Rotator | Pitch/Yaw/Roll representation of rotation. | Closed orientation. |
+| Object reference | Reference to a particular object. | The specific Hinge component. |
+| Target | Object an operation acts on. | Hinge in Set Relative Rotation. |
+| Function | Named operation that can be called. | Request opening. |
+| Custom Event | User-defined event entry point. | OpenDoor. |
+| Branch node | Selects between two execution paths using a Boolean. | If locked, do not open. |
+| FlipFlop | Alternates execution between A and B. | Open, close, open. |
+| Sequence node | Triggers execution outputs in order. | Initialize a light, then print. |
+| Timeline | Drives values over time using tracks. | Animate door opening. |
+| Lerp | Interpolate between values using an Alpha amount. | Blend closed and open rotations. |
+| Alpha | Interpolation amount; 0 and 1 commonly identify endpoints. | 0.5 halfway in a simple linear blend. |
+| Compile | Process/check Blueprint changes so they can run. | Compile the graph after editing. |
+| Save | Write asset changes to disk. | Preserve the Blueprint file. |
+| Print String | Display diagnostic text. | Confirm T fired. |
+| Interface | Shared contract different objects can implement. | Different door types accept interaction. |
+| Dependency | Another resource required for something to work. | Door Blueprint requires its mesh. |
+
+### Player, movement, and input
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| Pawn | Actor that a Controller can possess. | Controllable spectator. |
+| Character | Specialized Pawn with character movement support. | Walking visitor. |
+| Player Controller | Represents player control and can possess a Pawn. | Controls the visitor. |
+| Possession | Controller taking control of a Pawn. | Player controls spawned Character. |
+| GameMode | Rules and defaults for the running game context. | Default Pawn class. |
+| Player Start | Placement point used by spawn logic. | Visitor starting position. |
+| Input Action | Defined input concept and value type in Enhanced Input. | Move as a 2D value. |
+| Input Mapping Context | Group of bindings mapping controls to actions. | Keyboard movement bindings. |
+| Modifier | Changes an input value. | Reorder axes or negate. |
+| Trigger | Tests conditions governing action activation. | Hold before interacting. |
+| Swizzle | Rearranges input value components. | Route a key contribution to Y. |
+| Negate | Reverse the sign of selected components. | Negative movement value. |
+| Movement component | Supplies movement behavior. | CharacterMovement or FloatingPawnMovement. |
+| Viewport focus | Viewport receiving keyboard/mouse interaction. | Click into Play before pressing T. |
+| PIE / Play In Editor | Game session running inside the Editor. | Control the test character. |
+| SIE / Simulate In Editor | Simulation session, potentially without initial Pawn control. | Observe the scene. |
+| Runtime / Editor time | While the application runs / while authoring outside gameplay. | Test the door / place the door. |
+
+### Appearance, collision, and physics
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| Geometry | Spatial shape of an object. | Pillar surfaces. |
+| Static Mesh | Reusable mesh without skeletal deformation; it can still move. | Trapdoor panel. |
+| Skeletal Mesh | Mesh using a skeleton for deformation and animation. | Animated Roman character. |
+| Material | Defines how a surface is shaded. | Stone appearance. |
+| Texture | Image data sampled by a material or another system. | Stone surface image. |
+| Base Color | Underlying surface color input. | Sandy limestone. |
+| Roughness | Controls how broad or sharp reflections appear. | Matte stone has higher roughness. |
+| Metallic | Describes metallic surface behavior. | Zero for simple stone. |
+| Rendering | Producing visible images from scene data. | Drawing the arena. |
+| Mobility | Setting governing movement and related lighting behavior. | Movable door panel. |
+| Collision | Rules and geometry for spatial interaction. | Pillar blocks player. |
+| Collision preset | Named collection of collision settings. | Blocking floor settings. |
+| Collision channel | Category used for collision queries or object responses. | Pawn-related responses. |
+| Block / Overlap / Ignore | Prevent passage / allow intersection with detection when configured / do not respond to a specified channel. | Wall / trigger zone / non-interacting decoration. |
+| Physics simulation | Solver-driven motion using forces and physical properties. | Loose object falling. |
+| Gravity | Acceleration used to make applicable objects fall. | Visitor falls through opening. |
+| Collision geometry | Shape used for collision tests; may differ from visible shape. | Simplified pillar collision. |
+| LOD / Level of Detail | Alternative detail representations used for performance. | Simpler distant objects. |
+
+### Files and collaboration
+
+| Term | Plain-language meaning | Example |
+|---|---|---|
+| .uproject | Project descriptor file. | Open the Unreal project. |
+| .uasset / .umap | Asset package / map package, generally binary. | Blueprint file / arena map. |
+| Config / Source | Configuration files / C++ source when present. | Project settings / gameplay code. |
+| Generated files | Files tools can recreate. | Intermediate build data and caches. |
+| Instance override | Value differing from its class default. | One pillar scaled differently. |
+| Asset migration | Unreal workflow copying assets and dependencies between projects. | Copy a reference trapdoor. |
+| World Partition | System managing a world using spatial partitioning and streaming. | Large-world organization option. |
+| Streaming | Load/unload portions of content as needed. | Load another world area. |
+| One File Per Actor | External Actor instance data files in supported configurations. | Reduce some shared-map editing conflicts. |
+| Repository | Tracked project files and history. | ColosseumV3. |
+| Branch | Named line of work in Git history. | albert. |
+| Commit | Recorded set of changes. | Save a completed guide revision. |
+| Pull request | Proposal to combine branch changes. | Review knowledge before adding to main. |
+| Merge conflict | Changes Git cannot automatically reconcile. | Competing binary asset edits. |
+| Git LFS | Stores large-file content separately while Git tracks pointers. | Unreal binary asset storage. |
+| Lock | Coordinate exclusive file editing when supported by the workflow. | Reserve a map before editing. |
+| Reproducible example | Example someone else can open and test with stated prerequisites. | Independent trapdoor practice project. |
+
+### Common terminology traps
+
+- **Compile and Save are different.** Compile processes Blueprint changes; Save writes the asset to disk.
+- **Static Mesh does not mean immovable.** A Static Mesh component can move when configured appropriately, such as using Movable mobility.
+- **A Sequence node does not choose a route.** It triggers outputs in order. Use a Branch or Switch to select based on a condition or value.
+- **Level Sequence is different from Sequence node.** A Level Sequence authors timed cinematic content in Sequencer.
+- **Scale is not a measurement in centimeters.** It multiplies the original mesh dimensions.
+- **An asset is different from its placed instance.** Removing one pillar from the map does not require deleting the pillar Blueprint.
+- **A Git branch is different from a Blueprint Branch node.** One organizes repository history; the other chooses execution paths.
+- **Collision does not require physics simulation.** The example trapdoor can rotate through Blueprint while still having collision.
+- **A lock or One File Per Actor does not remove all collaboration conflicts.** Dependencies still require coordination.
+
+### How the words connect
+
+```mermaid
+flowchart TD
+    A["Blueprint Class: reusable recipe"] --> B["Actor instance in level"]
+    B --> C["Hinge Scene Component"]
+    C --> D["Panel Static Mesh Component"]
+    E["T key event"] --> F["Set Relative Rotation"]
+    F -->|Target| C
+    D --> G["Material: surface appearance"]
+    D --> H["Collision: spatial interaction"]
+```
+
+**Say it back:** “My level contains a trapdoor Actor instance. Its Blueprint defines a Hinge and panel. An event runs an operation that rotates the hinge.”
+
 ## Official Unreal Engine 5.8 learning map
 
 Start with [Epic's official UE 5.8 documentation](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-5-8-documentation). Its verified landing page lists these sections. Follow the section links from there to keep the version context.
