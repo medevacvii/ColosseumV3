@@ -1,12 +1,12 @@
-# Unreal Engine beginner's hands-on guide
-## UE5 foundations for Albert's Colosseum project
+# Unreal Engine 5.8 beginner's hands-on guide
+## Illustrated foundations for Albert's Colosseum project
 
 Author: Albert Leung's learning notes  
 Prepared: October 30, 2026  
-Target requested: Unreal Engine 5.8  
+Target: Unreal Engine 5.8  
 Status: Learning reference on `albert`; not a mandatory team implementation.
 
-> Version limitation: official documentation retrieval was unavailable when this guide was written. The exact Unreal Engine 5.8 release, menus, template contents, and plugin compatibility have not been verified. These lessons use standard UE5 workflows. Check **Help → About Unreal Editor** (or the equivalent About screen) for your actual version. If a control differs, search by its name rather than assuming the screenshot or menu location from another version applies. These exercises have not been run in your project.
+> Official version reference: [Epic's Unreal Engine 5.8 documentation](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-5-8-documentation). This landing page was verified in this conversation. Detailed documentation retrieval is currently unavailable, so this revision does not claim every menu, template, or plugin has been checked against 5.8. The exercises use standard UE5 workflows and have not been run in your project. Confirm your installed version in **Help → About Unreal Editor**, or its equivalent About screen.
 
 ## How to use this guide
 
@@ -22,6 +22,31 @@ Suggested sessions:
 | 2 | 5–7 | A reusable pillar and a button-triggered trapdoor |
 | 3 | 8–10 | Understanding movement, collisions, and map organization |
 | 4 | 11–13 | A repeatable troubleshooting and Git routine |
+
+## Start here: your first 15 minutes
+
+Do only these five tasks before reading everything else:
+
+1. Open the separate `Colosseum_Learning` project described in lesson 2.
+2. Press Play, click inside the viewport, and verify that the template character moves.
+3. Stop Play and select one visible object.
+4. Change its Location Z by 100 units and watch it move upward.
+5. Save, then write one sentence: “I moved an Actor upward by one meter.”
+
+**Finish line:** one visible change you understand and can repeat.
+
+## Diagram key
+
+The diagrams explain relationships and behavior; they are not screenshots of the 5.8 Editor. Boxes in Blueprint diagrams summarize nodes or operations. Search for the named nodes in the actual graph and check their pin types.
+
+| Visual idea | Read it as |
+|---|---|
+| A box connected to another box | A relationship or an operation leading to another |
+| A diamond | A question or decision |
+| A labeled arrow | The stated relationship, value, or execution path |
+| Parent above child | Ownership, attachment, or dependency as labeled |
+
+GitHub renders these Mermaid diagrams. If your local Markdown viewer shows code instead, open the guide on GitHub. A blank preview is a viewer issue, not an Unreal problem.
 
 ## 1. Understand the pieces before clicking
 
@@ -183,6 +208,26 @@ A newly created map may need the template's GameMode configured in World Setting
 
 **Checkpoint:** the character appears above the floor and can stand on it.
 
+### World and relative transforms: the difference that makes hinges work
+
+A Transform contains Location, Rotation, and Scale.
+
+- **World transform:** where something is in the level.
+- **Relative transform:** where a component is relative to its parent.
+- **Attachment:** moving or rotating the parent also affects attached children.
+
+Example: the trapdoor Actor can be placed anywhere in the arena. Hinge is attached to its root, and DoorPanel is offset from Hinge. You rotate Hinge locally to open the door, without needing to calculate a new world position for every corner.
+
+```mermaid
+flowchart TD
+    W["Level world coordinates"] -->|Actor world transform| A["Trapdoor Actor root"]
+    A -->|Relative transform| H["Hinge"]
+    H -->|Panel offset of X = 100| P["DoorPanel"]
+    H -->|Rotate Pitch| R["Panel swings around hinge"]
+```
+
+**Hands-on check:** move the whole trapdoor Actor 500 units along X. Then press T in Play. It should still open around its own hinge.
+
 ## 5. Create a reusable pillar Blueprint
 
 ### Goal
@@ -302,6 +347,41 @@ flowchart TD
 
 Pitch rotates around the Y axis. If the panel opens in the wrong direction for your layout, inspect the component orientation and try +90 instead of -90.
 
+### Read the graph before connecting wires
+
+Blueprint graphs have execution flow and data flow.
+
+| Pin or connection | Job | Example |
+|---|---|---|
+| Execution pin | Determines when an operation runs | T Pressed → FlipFlop |
+| Target object | Identifies the object to modify | Hinge component reference |
+| Rotation value | Provides the requested orientation | Pitch=-90 |
+| Boolean | A true/false value | Is the door open? |
+
+Do not identify data types by color alone. Read the pin label and tooltip.
+
+```mermaid
+flowchart TD
+    E["T Pressed execution"] --> F["FlipFlop"]
+    F -->|A execution| S["Set Relative Rotation"]
+    H["Hinge component reference"] -->|Target data| S
+    V["Pitch -90, Yaw 0, Roll 0"] -->|New Rotation data| S
+```
+
+**Hands-on check:** if execution arrives but Target points at the wrong component, the intended panel may not move. Check both the execution wire and Target.
+
+### Trapdoor pivot checklist
+
+| Part | Relative position | Purpose |
+|---|---|---|
+| Hinge | X=0, Y=0, Z=0 under Actor root | Defines the rotation center |
+| DoorPanel | X=100, Y=0, Z=0 under Hinge | Offsets a centered 200-unit panel so one edge meets the hinge |
+| DoorPanel scale | X=2, Y=2, Z=0.1 for the standard cube | Makes the panel approximately 200 × 200 × 10 units |
+
+These dimensions assume the standard centered 100-unit cube. Scale the **mesh component**, leaving Hinge scale at 1,1,1 for the exercise.
+
+**Common mistake:** moving Hinge and DoorPanel together in the same way leaves the panel centered on its pivot. Inspect the hierarchy and the panel's relative offset.
+
 ### D. Test above the floor
 
 1. Place one trapdoor in the practice map.
@@ -371,6 +451,23 @@ For a free-flying Pawn, a FloatingPawnMovement component is one possible approac
 
 The mapping context must be active for the appropriate local player. Swizzle and Negate modifiers can make individual keys contribute to the intended X/Y/Z input axes. Their exact settings depend on your action's value type and graph, so copy the principle rather than blindly copying someone else's axis order.
 
+### Trace input one checkpoint at a time
+
+```mermaid
+flowchart TD
+    K["Physical key"] --> X{"Correct input system active?"}
+    X -->|Yes| A["Input event fires"]
+    X -->|No| C["Check mappings and input owner"]
+    A --> V{"Value and direction correct?"}
+    V -->|Yes| M["Movement or rotation operation"]
+    V -->|No| D["Inspect input value and modifiers"]
+    M --> R["Observe object in Play"]
+```
+
+The T-key trapdoor lesson uses a simple Actor keyboard event. The template's player movement may use Enhanced Input. These are separate examples; changing a movement Mapping Context does not automatically repair the trapdoor's input ownership.
+
+For production interaction, a useful later architecture is: the player handles the interaction key, identifies the targeted door, and calls an interaction event or interface on that door. Avoid making every door listen directly to the same keyboard event.
+
 ## 9. Organize a Colosseum without one giant Blueprint
 
 Begin with a small layout:
@@ -390,6 +487,25 @@ Avoid making the Level Blueprint responsible for every door and pillar. Reusable
 Separate Actors alone do **not** guarantee conflict-free Git collaboration. In conventional maps, multiple placed Actors may still be serialized into the same map file. World Partition and One File Per Actor can change storage behavior, but require deliberate project setup and team agreement.
 
 Do not enable them casually in an established team project. First agree on engine version, map workflow, locking, and which files each person owns.
+
+### A small Colosseum test slice
+
+Build and verify a tiny vertical slice before copying it around the arena:
+
+```mermaid
+flowchart TD
+    L["Practice level"] --> F["Floor sections around opening"]
+    L --> T["One trapdoor Actor"]
+    L --> P["One player"]
+    L --> R["Lower prison platform"]
+    P -->|Interaction request| T
+    T -->|Panel opens| O["Opening becomes passable"]
+    O -->|Gravity and collision| R
+```
+
+This diagram is the intended later behavior, not a claim that the introductory T-key example already provides player targeting or a finished prison.
+
+**Build order:** surrounding floor → one trapdoor → lower platform → collision test → interaction → animation. Save after each successful checkpoint.
 
 ## 10. Collision and physics: two different jobs
 
@@ -496,13 +612,29 @@ Complete these in order:
 
 Only then expand toward a small prison room, animated trapdoor, interaction prompt, and team-approved C++/Blueprint boundary. A tiny working scene teaches more than an enormous broken replica.
 
-## Official reference starting points
+## Official Unreal Engine 5.8 learning map
 
-These official Epic links are provided for follow-up; their current contents and 5.8-specific coverage could not be retrieved or verified during preparation.
+Start with [Epic's official UE 5.8 documentation](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-5-8-documentation). Its verified landing page lists these sections. Follow the section links from there to keep the version context.
 
-- [Unreal Engine documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine)
-- [Unreal Editor interface](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-editor-interface)
-- [Blueprints Visual Scripting](https://dev.epicgames.com/documentation/en-us/unreal-engine/blueprints-visual-scripting-in-unreal-engine)
-- [Enhanced Input](https://dev.epicgames.com/documentation/en-us/unreal-engine/enhanced-input-in-unreal-engine)
+| This guide | Official documentation section to explore |
+|---|---|
+| Editor, projects, Actors, and transforms | Understanding the Basics |
+| Assets, meshes, and materials | Working with Content; Designing Visuals, Rendering, and Graphics |
+| Arena layout and levels | Building Virtual Worlds |
+| Pillar and trapdoor Blueprints | Blueprints Visual Scripting; Gameplay Tutorials |
+| Input and interaction | Gameplay Systems |
+| Future C++ work and IDE setup | Programming with C++ |
+| Git and collaboration planning | Setting Up Your Production Pipeline |
+| Checking the result | Testing and Optimizing Your Content |
 
-Use the documentation version selector, where available, to match your installed engine. Mermaid diagrams in this guide render on GitHub; some Markdown printing plugins require additional support.
+This guide provides small learning exercises. Epic's documentation is the reference for supported features, detailed settings, and version-specific behavior.
+
+## Revision and validation notes
+
+- Updated the title and source reference to the verified official UE 5.8 documentation landing page.
+- Added a first-session checklist and a diagram key.
+- Expanded explanations of world versus relative transforms, Blueprint execution versus data flow, hinge geometry, input tracing, and a small Colosseum test layout.
+- The diagrams are conceptual Mermaid diagrams, not captured Editor screenshots.
+- The exact 5.8 subpage instructions could not be checked during this revision because detailed retrieval failed.
+- No Unreal project or Blueprint assets were changed or run by this documentation update.
+
