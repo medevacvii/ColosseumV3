@@ -1,0 +1,24 @@
+# Unreal generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Visual Studio
+.vs/
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+*.userprefs
+
+# Generated solution/project files
+*.sln
+
+# Unreal temporary files
+*.tmp
+*.log
+
+# OS junk
+Thumbs.db
+.DS_Store
