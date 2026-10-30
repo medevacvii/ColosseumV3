@@ -441,6 +441,156 @@ Cherry-pick selects whole commits, including all changed files in each selected 
 
 If one commit mixes a useful guide with unrelated personal notes or binary assets, prepare a clean commit on a separate branch containing only the intended changes, or split the commit carefully before proposing it. Review the diff and dependencies before publishing. Avoid rewriting a shared branch's history just to tidy a pull request.
 
+## Bring another branch's updates into albert before they reach main
+
+You can incorporate work directly from another branch. It does not need to be merged into `main` first.
+
+Example source: `integration/unreal-jetbrains-rider`. Destination: `albert`.
+
+| What you want | Method |
+|---|---|
+| Only particular commits | Cherry-pick those commits onto `albert` |
+| All source-branch history and changes not already incorporated | Merge the source branch into `albert` |
+| Try the combination before changing shared `albert` | Use a temporary review branch, then open a pull request to `albert` |
+
+For a small, clearly understood update, direct cherry-pick is reasonable. For a whole branch or uncertain dependencies, use the review-branch approach below.
+
+### 1. Prepare Albert's branch
+
+Save your work and start with a clean working tree. Close Unreal Editor before switching branches containing Unreal assets.
+
+```bash
+git status
+git fetch origin
+git switch albert
+git pull --ff-only
+```
+
+If `albert` is not yet local, replace `git switch albert` with `git switch --track origin/albert`. If the pull fails, resolve the history difference before proceeding.
+
+### 2. Inspect incoming work
+
+```bash
+git log --reverse --oneline HEAD..origin/integration/unreal-jetbrains-rider
+git diff --stat HEAD...origin/integration/unreal-jetbrains-rider
+git diff HEAD...origin/integration/unreal-jetbrains-rider
+```
+
+The log lists source commits not reachable from your current branch, including any relevant shared history. The three-dot diff shows source-side changes since the common ancestor; it is a preview, not a guarantee of the final merge result.
+
+To inspect which source commits have not reached `main`:
+
+```bash
+git log --reverse --oneline origin/main..origin/integration/unreal-jetbrains-rider
+```
+
+Inspect each relevant commit with `git show COMMIT_ID`, replacing the placeholder with an actual ID. Check dependencies, screenshots, configuration, and binary assets. If equivalent changes were previously cherry-picked, commit IDs alone may make them look new; check the actual content before copying again.
+
+### Option A: Bring selected commits directly into albert
+
+Stay on `albert`. Replace the example IDs with real IDs and apply prerequisite commits first:
+
+```bash
+git cherry-pick a1b2c3d c3d4e5f
+```
+
+Then review before uploading:
+
+```bash
+git log --oneline origin/albert..HEAD
+git diff --stat origin/albert HEAD
+git diff origin/albert HEAD
+git status
+git push origin albert
+```
+
+Expected result: only the selected commits' changes, including all files in those commits, are copied into `albert` and pushed. The source branch and `main` remain unchanged.
+
+Use the earlier cherry-pick conflict instructions if needed: resolve and stage files, then `git cherry-pick --continue`; use `git cherry-pick --abort` to abandon the active sequence.
+
+### Option B: Merge all incoming source work through a review branch
+
+Starting from the prepared `albert` branch:
+
+```bash
+git switch -c review/rider-into-albert
+git merge --no-ff --no-commit origin/integration/unreal-jetbrains-rider
+```
+
+This merges the fetched GitHub version of the Rider branch into the review branch. It combines both branches' histories; it does not simply replace Albert's files with the source branch's files. Changes inherited from other branches can also arrive, so inspect the full result.
+
+If there are incoming changes and no unresolved conflicts, Git pauses before creating the merge commit. Review:
+
+```bash
+git status
+git diff --cached --stat
+git diff --cached
+git diff
+```
+
+Resolve conflicts before committing and stage each resolved file explicitly. For binary Unreal conflicts, coordinate the intended asset version and verify it in Unreal; text conflict-marker editing cannot repair binary assets.
+
+When the staged result is correct, commit the merge:
+
+```bash
+git commit -m "Merge Rider integration knowledge into Albert review branch"
+```
+
+If Git said **Already up to date**, no merge commit is needed. To abandon a merge while it is still in progress, use:
+
+```bash
+git merge --abort
+```
+
+The abort command applies before committing the merge. Starting with a clean working tree makes recovery more predictable.
+
+Review the complete proposed change relative to the fetched `albert` branch, verify the guides and any examples, then publish:
+
+```bash
+git log --oneline origin/albert..HEAD
+git diff --stat origin/albert...HEAD
+git diff origin/albert...HEAD
+git push -u origin review/rider-into-albert
+```
+
+On GitHub, create a pull request with:
+
+| Field | Value |
+|---|---|
+| Base branch | `albert` |
+| Compare branch | `review/rider-into-albert` |
+
+Check **Files changed** and merge the pull request when the result is ready. Setting the base to `albert` is essential: this update is intended for Albert's branch.
+
+After the PR is merged:
+
+```bash
+git switch albert
+git pull --ff-only
+```
+
+Expected result: `albert` contains the combined work. The source branch and `main` remain unchanged.
+
+### Use the same process for Visual Studio
+
+Substitute this source wherever the Rider remote branch appears:
+
+```text
+origin/integration/unreal-visual-studio
+```
+
+For the review-branch approach, choose an unused name such as `review/visual-studio-into-albert` and an appropriate commit message.
+
+If the source work exists only on your computer, you may use its local branch name instead of `origin/...`. That incorporates its committed work only; it does not include unsaved or uncommitted edits.
+
+### What happens when the source branch later reaches main?
+
+These operations do not automatically keep branches synchronized. Fetch and repeat the appropriate review process when more updates arrive.
+
+A merge preserves ancestry, helping Git recognize shared commits when histories meet later. A cherry-pick normally creates new IDs; equivalent changes may appear twice in the commit history, and later merges can still need conflict resolution. Squashing or rebasing a source PR can also change commit identity.
+
+Before eventually proposing Albert's work to `main`, start a focused review branch from the latest `main` and inspect which changes are still needed. Do not assume every commit on `albert` should be published to the team.
+
 ## Small hands-on example
 
 Goal: write a Rider setup guide.
