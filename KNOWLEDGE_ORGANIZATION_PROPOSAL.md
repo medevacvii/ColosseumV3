@@ -51,18 +51,33 @@ Knowledge/JetBrainsRider/
     rider-unreal-settings.png
 ```
 
-## How the existing branches fit
+## Current branches and suggested uses
 
-| Branch | Suggested use |
-|---|---|
-| `integration/unreal-visual-studio` | Develop and check Visual Studio integration guides and examples |
-| `integration/unreal-jetbrains-rider` | Develop and check Rider integration guides and examples |
-| `albert` | Record Albert's approach and proposed changes |
-| `main` | Publish reviewed material if the team chooses to adopt it |
+Branch inventory checked on October 30, 2026. These four branches currently exist in ColosseumV3. The purposes below are recommendations; branch names do not establish team policy or prove that setup work is complete.
 
-The integration branches were created from `main`. Their existence does not mean integration has already been configured or tested.
+| Current branch | Suggested role | Examples of suitable work | Suggested destination when ready |
+|---|---|---|---|
+| [`main`](https://github.com/medevacvii/ColosseumV3/tree/main) | Shared baseline and reviewed knowledge | Approved guides, a knowledge index, and agreed reference examples | Receive reviewed changes through pull requests |
+| [`albert`](https://github.com/medevacvii/ColosseumV3/tree/albert) | Albert's personal proposals and implementation approach | This organization proposal, draft notes, and alternatives for discussion | Keep personal material here; propose selected changes to `main` only when appropriate |
+| [`integration/unreal-visual-studio`](https://github.com/medevacvii/ColosseumV3/tree/integration/unreal-visual-studio) | Develop and check Unreal Engine + Visual Studio integration knowledge | Installation steps, toolchain configuration, build troubleshooting, screenshots, and isolated examples | Pull request to `main` for reviewed material, preferably under `Knowledge/VisualStudio/` |
+| [`integration/unreal-jetbrains-rider`](https://github.com/medevacvii/ColosseumV3/tree/integration/unreal-jetbrains-rider) | Develop and check Unreal Engine + JetBrains Rider integration knowledge | Rider setup, Unreal integration, debugging notes, screenshots, and isolated examples | Pull request to `main` for reviewed material, preferably under `Knowledge/JetBrainsRider/` |
 
-For later work, short-lived topic branches can make each pull request easier to review. The team can retain the current branches if that better fits its workflow.
+The integration branches and `albert` were created from `main`. Their existence does not mean integration has already been configured or tested. This inventory records branch names, not a review of all branch contents.
+
+### Choosing a branch
+
+1. Writing a Visual Studio integration guide? Use `integration/unreal-visual-studio`.
+2. Writing a Rider integration guide? Use `integration/unreal-jetbrains-rider`.
+3. Recording Albert's preferred approach or a proposal whose details are not agreed? Use `albert`.
+4. Looking for the shared reviewed version? Start on `main`.
+
+A branch contains a version of the whole repository. Put a guide in its subject folder even while working on a subject branch. Merging that guide into `main` can then preserve its category.
+
+Do not merge the entire `albert` branch just to publish one guide if it also contains unrelated personal proposals. Use a focused topic branch or selected commits and inspect the pull request's changed-file list.
+
+For later work, short-lived topic branches can make each pull request easier to review. The team can retain the current branches if that better fits its workflow. Additional personal or subject branches are optional and are not created by this proposal.
+
+Update this inventory when branches are added, renamed, or removed. Members can agree on the shared outcome while choosing different detailed implementations.
 
 ## Small hands-on example
 
