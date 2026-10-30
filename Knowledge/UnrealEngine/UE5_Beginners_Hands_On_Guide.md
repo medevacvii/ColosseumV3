@@ -612,6 +612,147 @@ Complete these in order:
 
 Only then expand toward a small prison room, animated trapdoor, interaction prompt, and team-approved C++/Blueprint boundary. A tiny working scene teaches more than an enormous broken replica.
 
+## Where do I find it? Location guide and memory aids
+
+Use this section while the Editor is open. The locations below describe common UE5 layouts, not a verified screenshot-by-screenshot map of 5.8. Panels can be moved or hidden. Use the **Window** menu to look for a missing panel; exact menu labels can vary.
+
+### Remember five places first
+
+Say aloud: **“Look, List, Details, Library, Logic.”**
+
+| Memory word | Unreal name | What you use it for | Typical place |
+|---|---|---|---|
+| Look | Viewport | See and select the world | Large central area |
+| List | Outliner | Find objects already placed in the world | Often upper right |
+| Details | Details panel | Change properties of the selected object | Often lower right |
+| Library | Content Browser / Content Drawer | Find saved assets and reusable recipes | Often bottom; Drawer can slide open |
+| Logic | Blueprint Event Graph | Connect behavior | Inside a Blueprint Editor window |
+
+**Memory sentence:** “Look at the world, find it in the List, change its Details, get recipes from the Library, give them Logic.”
+
+These positions describe a common layout. Names are more reliable than screen positions.
+
+```mermaid
+flowchart TD
+    Q["What am I looking for?"] --> A{"Already placed in this level?"}
+    A -->|Yes| O["Outliner: find the Actor"]
+    A -->|Reusable saved asset| C["Content Browser: find the asset"]
+    O --> D["Details: edit selected Actor"]
+    C --> B["Open Blueprint: edit class"]
+    B --> G["Event Graph: edit behavior"]
+```
+
+### Find things by the task you want to do
+
+| I want to… | Where to start | What to select or search for | Memory aid |
+|---|---|---|---|
+| Find a pillar already in my arena | Outliner | Search its Actor name | **On stage → Outliner** |
+| Find the reusable pillar Blueprint | Content Browser / Drawer | Search BP_PracticePillar | **Recipe → Content** |
+| Move one placed pillar | Select it → Details → Transform | Location | **Where → Location** |
+| Turn one placed pillar | Details → Transform | Rotation | **Face → Rotation** |
+| Resize one placed pillar | Details → Transform | Scale | **Size multiplier → Scale** |
+| Find a selected object in the viewport | Viewport | Press F with viewport focus | **F = Focus** |
+| Add a basic cube or cylinder | Place Actors / Shapes | Cube or Cylinder | **Place a shape** |
+| Create a reusable Blueprint | Content Browser context menu | Blueprint Class → Actor | **Create recipe in Content** |
+| Add a mesh or hinge to a Blueprint | Open Blueprint → Components | Add component; Static Mesh or Scene | **Parts → Components** |
+| Choose which mesh a component displays | Select mesh component → Details | Static Mesh asset field | **Shape → Mesh** |
+| Choose surface appearance | Mesh component → Details | Materials slots | **Skin → Material** |
+| Find the Hinge's child panel | Blueprint → Components hierarchy | Expand Hinge | **Parent holds child** |
+| Make a panel move at runtime | Select mesh component → Details | Mobility → Movable | **Moving part → Movable** |
+| Add T-key behavior | Blueprint → Event Graph | Right-click empty graph; search T keyboard event | **Behavior → Graph** |
+| Rotate the correct hinge | Graph; drag Hinge reference from Components | Set Relative Rotation | **Reference first, operation second** |
+| Check collisions | Select relevant component → Details | Search Collision | **Blocking → Collision** |
+| Set the practice Actor's keyboard input | Blueprint → Class Defaults | Search Auto Receive Input | **Who listens? → Input** |
+| Choose default Pawn for a map | World Settings | GameMode override and its defaults | **Rules choose player setup** |
+| Find an Input Action or Mapping Context | Content Browser search | Asset name or asset-type filter | **Input definitions are assets** |
+| See whether a Mapping Context is activated | Relevant Pawn/Controller setup graph or code | Add Mapping Context or project-specific setup | **Asset exists does not mean active** |
+| Open a saved map | Content Browser | Find the map asset and open it | **World recipe → Map asset** |
+| Run the scene | Main toolbar | Play | **Test → Play** |
+| Stop the scene | Play controls / focused play viewport | Stop or Esc | **Stop before editing workflow** |
+| Check warnings and errors | Window menu and relevant log panels | Output Log or Message Log | **Evidence → Logs** |
+| See Blueprint compilation problems | Blueprint Editor | Compile results / Compiler Results | **Graph errors → Compiler Results** |
+| Change project-wide options | Settings / Edit menus, depending on layout | Project Settings | **Whole project → Project Settings** |
+| Change your Editor preferences | Edit or settings menus | Editor Preferences | **My workspace → Preferences** |
+| Enable a plugin | Settings / Edit menus | Plugins | **Extra capability → Plugin** |
+
+Search within Details can make properties appear missing. Clear the search box when you finish. Also confirm whether you selected the placed Actor, Blueprint class defaults, or an individual component: their Details panels expose different properties.
+
+### Three windows that beginners often mix up
+
+| Workspace | You are editing… | Example change |
+|---|---|---|
+| Level Editor | A world and its placed instances | Move one trapdoor to the prison entrance |
+| Blueprint Editor | A reusable class and its components/graphs | Change the hinge behavior for the trapdoor class |
+| Material Editor | A surface shading asset | Change stone color and roughness |
+
+**Memory aid:** **“Level places. Blueprint behaves. Material dresses.”**
+
+If you are looking for Event Graph inside the Material Editor, you are in the wrong workspace. First check the asset name and tab title.
+
+### Blueprint tabs: which one do I need?
+
+| Item | Purpose | Memory question |
+|---|---|---|
+| Components | Parts and attachment hierarchy | “What is it made of?” |
+| Viewport | Visual arrangement of components | “How do the parts fit?” |
+| Event Graph | Event-driven behavior | “What happens?” |
+| My Blueprint | Variables, functions, graphs, and related items | “What have I defined?” |
+| Class Defaults | Default property values for the class | “What should new copies start with?” |
+| Details | Properties of the selected component, node, or other item | “What have I selected?” |
+| Compile | Process/check graph changes | “Can this run?” |
+| Save | Preserve asset changes on disk | “Will this still be here later?” |
+
+### Keyboard reminders: practice five first
+
+Common defaults below may differ if shortcuts were customized. They apply in the appropriate Editor context, not universally in every window.
+
+| Shortcut | Common use | Memory hook |
+|---|---|---|
+| F | Focus selected object in the level viewport | **Focus** |
+| W | Translate/move tool | **Walk it to another position** |
+| E | Rotate tool | **E for turning an elbow** |
+| R | Scale tool | **Resize** |
+| Ctrl+Space | Toggle Content Drawer | **Open the asset library** |
+| Ctrl+S | Save current active asset/map as applicable | **Save this work** |
+| Esc | Stop a focused Play session | **Exit test** |
+
+W/E behave differently while holding right mouse button to fly the editor camera. Click or focus the viewport before using its shortcuts. Ctrl+S is not a guarantee that every modified asset in the project is saved; use the available save-all workflow and check modified assets before finishing.
+
+### A two-minute memory exercise
+
+Do this in the practice project, once per session:
+
+1. **List:** select Arena_Floor in the Outliner.
+2. **Details:** find its Location without changing it.
+3. **Look:** focus the viewport and press F.
+4. **Library:** open Content Drawer and find BP_PracticeTrapdoor.
+5. **Logic:** open it and locate Event Graph.
+6. Say aloud: “Outliner finds the placed copy. Content finds the recipe. Details changes my selection. Graph changes behavior.”
+7. Close the Blueprint window and repeat once without reading the steps.
+
+**Finish line:** finding these five places is enough. Speed is optional.
+
+### Make your own visible reminder
+
+Keep this short note beside your monitor:
+
+> **Already in the world? OUTLINER.**  
+> **Saved recipe? CONTENT.**  
+> **Change the selected thing? DETAILS.**  
+> **Make something happen? GRAPH.**  
+> **Lost in the world? Select it, then F.**
+
+Use clear names such as Arena_Floor, Prison_Door_North, and BP_PracticeTrapdoor. Good names act as external memory: search can do the remembering for you.
+
+### If something disappears
+
+1. Check which window you are in: Level, Blueprint, or Material Editor.
+2. Clear search filters in Outliner, Content Browser, and Details.
+3. Check the selected item; the wrong selection produces the wrong properties.
+4. Look under Window for the missing panel.
+5. If the layout is badly rearranged, look for the Editor's layout-loading/reset option. Save your work first and expect a workspace rearrangement.
+6. If still stuck, record the active window title, selected item, and missing control. Those three facts make troubleshooting much faster.
+
 ## Plain-language terminology dictionary
 
 Use this as a lookup table. Learn the terms as you encounter them; memorizing the whole list is not a prerequisite.
