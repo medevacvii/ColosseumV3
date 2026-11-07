@@ -1,4 +1,7 @@
 # Unreal Engine 5.8 beginner's hands-on guide
+
+**Expanded reference:** [Unreal Engine & Blueprint Bible](Unreal_Engine_Blueprint_Bible.md) — detailed labs, Blueprint fundamentals, C++ decision guide, and a complete hybrid health example.
+
 ## Illustrated foundations for Albert's Colosseum project
 
 Author: Albert Leung's learning notes  
