@@ -335,3 +335,198 @@ Only perform these commands locally if this document was not already committed r
 - [ONNX Runtime Python](https://onnxruntime.ai/docs/get-started/with-python.html)
 
 **Memory aid:** **Test → Train → Evaluate → Export → Verify → Integrate → Act.** Training is not inference; observations are not remembered history; the model chooses the action, and Unreal executes it.
+
+---
+
+## 11. Character identity, roles, relationships and changing status (TDD required)
+
+**Requirement:** Each NPC must choose interactions based on **which character** it encounters, their **role**, **current status**, **faction/relationship**, and **shared history**. This supplements rather than replaces the existing observation and decision model.
+
+### 11.1 Do not use facial recognition to identify existing Unreal actors
+
+For simulated characters, Unreal knows actor identity; use AI Perception to detect an actor, then query its identity component or gameplay interface. Keep **actor reference** (runtime target) separate from **persistent character ID** (stable across save/load or re-spawning when applicable). Identity is not the same as faction, role, status or attitude.
+
+- Identity: unique persistent ID (e.g. `caesar_001`, `gladiator_017`). Avoid using an Actor display name or transient memory address as a permanent identity.
+- Role: emperor, gladiator, guard, prisoner, spectator, etc.
+- Faction: group membership; a faction can be neutral while a particular member is personally hostile.
+- Relationship: actor-to-actor attitude (friendly, ally, neutral, rival, hostile) with optional trust score and history.
+- Status: mutable state such as health, alive/unconscious, surrendering, armed, attacking, imprisoned, wounded, or searching.
+- Identification confidence: `Known`, `Suspected`, `Unknown`; **never assume an unseen or unidentified target is a known person**.
+
+### 11.2 Data flow and separation of responsibilities
+
+```text
+AI Perception: actor seen/heard
+              |
+              v
+    Resolve target actor
+              |
+    +---------+-----------+
+    |                     |
+ CharacterIdentity    CharacterStatus
+    |                     |
+ persistent ID         mutable state
+ role / faction        injuries, combat, surrender
+    |                     |
+    +----------+----------+
+               |
+          RelationshipStore <---- prior encounters and reputation
+               |
+               v
+      FInteractionContext
+               |
+               v
+      IAIDecisionProvider
+       /              \
+    Rules           ONNX policy
+       \              /
+        EInteractionAction
+               |
+               v
+      Blueprint/StateTree
+```
+
+**High cohesion:** Identity lookup **does not** choose actions; status component **does not** run ONNX; relationship store **does not** play animations; inference provider **does not** directly move or damage actors.
+
+### 11.3 Suggested C++ contracts (illustrative stubs, not yet added to Source)
+
+```cpp
+UENUM(BlueprintType)
+enum class ECharacterRole : uint8 {
+    Unknown, Emperor, Gladiator, Guard, Prisoner, Spectator
+};
+
+UENUM(BlueprintType)
+enum class ERelationshipAttitude : uint8 {
+    Unknown, Friendly, Neutral, Rival, Hostile
+};
+
+UENUM(BlueprintType)
+enum class EInteractionAction : uint8 {
+    Wait, Observe, Greet, ShowRespect, Assist,
+    Investigate, Chase, Defend, Attack, Retreat, Evade
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterIdentity {
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName PersistentCharacterId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ECharacterRole Role = ECharacterRole::Unknown;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName FactionId = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterStatus {
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float NormalizedHealth = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bIsAttacking = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bHasSurrendered = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bIsArmed = false;
+};
+```
+
+Include `bIsAlive`/incapacitation and other capabilities in the real implementation; evaluate contradictory status flags, and apply safety/gameplay rules **outside** the ML policy.
+
+### 11.4 Which data should the model consume?
+
+Keep raw character identifiers in the **lookup and memory system**. Do **not** treat arbitrary numeric IDs (e.g. `17` for gladiator 17) as meaningful continuous numbers: the network might falsely infer that ID 18 is 'more hostile' than ID 17. Feed stable **meaningful features** instead: role category, faction relationship, current attitude, health, armed state, attacking state, surrender state, proximity, identification confidence, trust score, and recent interactions.
+
+For person-specific differences, query the relationship/memory store using the **persistent character ID**, then feed the relevant relational features to the model. If identity-specific learned embeddings become necessary later, train and version an explicit ID-to-embedding mapping, with an Unknown fallback; do not introduce embeddings for the first prototype.
+
+**Multiple characters:** maintain per-target observations; select or rank candidates separately (for example based on threat or mission priorities), then infer for the chosen target. Never accidentally mix one actor's status with another actor's identity. A target may be known but out of sight; preserve last-seen details without treating them as present. For multiplayer/networked games, authoritative interaction rules and identity/state validation belong on the server.
+
+### 11.5 Starter interaction examples
+
+| Target | Current status | Relationship | Expected baseline action |
+|---|---|---|---|
+| Caesar (emperor) | observing, not hostile | friendly/authority | `ShowRespect` |
+| Fellow gladiator | injured | ally | `Assist` |
+| Opposing gladiator | attacking, armed | hostile | `Defend` |
+| Opposing gladiator | surrendered | hostile but not attacking | `Observe` / stop attack |
+| Prison guard | searching | hostile | `Evade` |
+| Unidentified actor | status uncertain | unknown | `Observe` (do not assume identity) |
+
+These are **proposed acceptance scenarios**. Real behaviour also depends on mission, survival rules, distance, line of sight, target selection and designer-approved constraints. Rules should override the learned policy for prohibited interactions (for example, attacking surrendered/incapacitated actors if disallowed).
+
+### 11.6 TDD: identity-first acceptance tests
+
+Write these tests **before implementation** and confirm RED → GREEN → REFACTOR.
+
+```python
+# MachineLearning/tests/test_interactions.py
+from gladiator_ai.interactions import choose_interaction
+
+def test_caesar_observing_receives_respect():
+    assert choose_interaction(
+        role="emperor", attitude="friendly",
+        attacking=False, surrendered=False, injured=False
+    ) == "SHOW_RESPECT"
+
+def test_injured_ally_receives_help():
+    assert choose_interaction(
+        role="gladiator", attitude="friendly",
+        attacking=False, surrendered=False, injured=True
+    ) == "ASSIST"
+
+def test_attacking_enemy_triggers_defense():
+    assert choose_interaction(
+        role="gladiator", attitude="hostile",
+        attacking=True, surrendered=False, injured=False
+    ) == "DEFEND"
+
+def test_surrendered_enemy_is_not_attacked():
+    assert choose_interaction(
+        role="gladiator", attitude="hostile",
+        attacking=False, surrendered=True, injured=False
+    ) != "ATTACK"
+
+def test_unknown_actor_does_not_get_guessed_identity():
+    assert choose_interaction(
+        role="unknown", attitude="unknown",
+        attacking=False, surrendered=False, injured=False
+    ) == "OBSERVE"
+```
+
+Then implement the minimal pure-Python **reference** decision function. These tests document requirements and are not evidence that a trained model works.
+
+Additional tests:
+1. Different persistent character IDs with the same role may have **different relationships and historical responses**.
+2. Updating one target's status does not alter another target's state.
+3. A target changing from **attacking** to **surrendered** stops the attack and updates the action.
+4. Ally becoming hostile changes attitude and behaviour without changing the underlying persistent identity.
+5. Unknown identity does not accidentally inherit memory from the previous target.
+6. Re-spawn/save-load restores the intended persistent identity and relationship history; stale Actor references are invalidated.
+7. Out-of-range health, invalid roles, contradictory status and missing assets fail safely.
+8. Neural inference receives deterministic versioned input encoding; PyTorch/ONNX and Unreal C++ agree on category encoding and action indices.
+9. Unreal functional tests verify Blueprint/StateTree executes the chosen interaction and correct target actor.
+10. Tests with multiple nearby actors ensure target selection and identity/status pairing stay correct.
+
+### 11.7 TDD-based rollout
+
+- **S01a:** Add pure Python identity/role/status/relationship tests and reference interaction policy.
+- **S01b:** Specify C++ identity/status components and relationship store; write Unreal Automation Tests before code.
+- **S02:** Capture synthetic encounter examples labeled with expected actions; split evaluation by encounter/session to reduce leakage. Test role/relationship fairness against game rules and test Unknown handling.
+- **S03:** Extend and version observation schema; retrain (schema changes require compatible retraining or migration); verify ONNX parity.
+- **S04:** Connect identity resolution + per-target context to NNE provider behind `IAIDecisionProvider` and maintain rules fallback.
+- **S05:** Blueprint integration/functional tests across emperor, ally, enemy, guard, surrendered and unknown actors.
+- **S06:** Per-character persistent memory, state transitions and regression suite.
+
+### 11.8 Rule for saved models
+
+Once trained, `GladiatorBrain_v002.onnx` retains its weights across sessions. Relationship, identity and status can change **without retraining** when the model already accepts those features. **Adding new model inputs or changing their order/schema does require a compatible model/export update**, which generally entails retraining. Keep the old model and schema available for rollback.
+
+**Memory aid: Detect → Identify → Inspect status → Recall relationship → Decide → Act → Remember.**
