@@ -530,3 +530,114 @@ Additional tests:
 Once trained, `GladiatorBrain_v002.onnx` retains its weights across sessions. Relationship, identity and status can change **without retraining** when the model already accepts those features. **Adding new model inputs or changing their order/schema does require a compatible model/export update**, which generally entails retraining. Keep the old model and schema available for rollback.
 
 **Memory aid: Detect → Identify → Inspect status → Recall relationship → Decide → Act → Remember.**
+
+---
+
+## 12. Overfitting, generalization and TDD (mandatory model-quality gate)
+
+### 12.1 What is overfitting?
+
+Overfitting occurs when a model fits its **training encounters** extremely well but performs substantially worse on new encounters. For example, it might memorize that `gladiator_017` is hostile and continue attacking after that person surrenders, rather than recognizing the **current status**. The opposite problem, *underfitting*, occurs when a model cannot capture useful patterns even on training data.
+
+**Never judge a model by training accuracy alone.** Compare metrics across training, validation, and untouched test sets.
+
+| Example | Training accuracy | Validation accuracy | Interpretation |
+|---|---:|---:|---|
+| A | 55% | 54% | Likely underfitting |
+| B | 91% | 89% | Promising generalization |
+| C | 99% | 72% | Possible overfitting |
+
+Values above are illustrative, not measured Colosseum results.
+
+### 12.2 Split by encounters and characters, not just rows
+
+**Leakage trap:** If 100 nearly identical observations from one gladiator fight are randomly divided among training and validation sets, they are not genuinely independent. The model may recognize familiar encounters rather than generalize.
+
+Use grouped partitions of whole **encounters/sessions** for a primary evaluation. Add **held-out-character** and **held-out-character-pair** evaluation to find out whether the policy generalizes to unfamiliar NPCs. For any chronological learning goal, consider later sessions as test data (time-based split). Multiple evaluation views answer different questions.
+
+- **Training set**: updates model weights.
+- **Validation set**: selects hyperparameters and stops training.
+- **Test set**: untouched until final evaluation; do not repeatedly tune against it.
+- Ensure features such as persistent IDs, relationship history and post-encounter labels do not reveal the answer or future information.
+- Never copy an encounter across train/validation/test after augmentation.
+- Report both **overall** performance and **per-status/per-role** metrics, especially surrendered, injured, unknown and newly hostile.
+
+### 12.3 TDD tests to write before the training pipeline
+
+Unit/contract tests (deterministic) should fail before their implementations are written:
+
+```python
+# MachineLearning/tests/test_dataset_splits.py
+from gladiator_ai.dataset import split_by_encounter
+
+def test_encounters_do_not_leak_across_splits(sample_encounters):
+    train, valid, test = split_by_encounter(sample_encounters, seed=120)
+    train_ids = {r["encounter_id"] for r in train}
+    valid_ids = {r["encounter_id"] for r in valid}
+    test_ids = {r["encounter_id"] for r in test}
+    assert train_ids.isdisjoint(valid_ids)
+    assert train_ids.isdisjoint(test_ids)
+    assert valid_ids.isdisjoint(test_ids)
+```
+
+This is a specification sketch: `sample_encounters` is a pytest fixture you must create, and `split_by_encounter` must be implemented. Include tests for missing IDs, empty splits, duplicate observations and insufficient group counts.
+
+```python
+# MachineLearning/tests/test_model_quality.py
+def test_validation_gap_within_project_threshold(training_report):
+    # Post-training quality gate, not a deterministic test of the optimizer.
+    assert training_report["train_accuracy"] - training_report["val_accuracy"] <= 0.10
+
+def test_surrender_recall_meets_threshold(training_report):
+    assert training_report["validation_surrender_recall"] >= 0.95
+```
+
+The `training_report` fixture should **load an already-produced, reproducible evaluation artifact**, not train a random network each time pytest runs. Thresholds **0.10** and **0.95** are illustrative: choose and document justified project-specific gates before training. A small accuracy gap alone **does not prove** good generalization (both scores could be low), and aggregate accuracy alone can hide critical failure cases. Evaluate sufficient sample counts and uncertainty, and validate critical gameplay rules independently.
+
+### 12.4 A tiny overfit test is actually useful during debugging
+
+**Counterintuitive distinction:** Deliberately fitting a **tiny, fixed training batch** extremely well can be a good **training-pipeline sanity test**. If a small network cannot fit a few clean examples, check labels, normalization, gradient flow, loss and architecture. This deliberate *tiny-batch overfit test* is **not** evidence of real-world performance.
+
+After the sanity test, restore proper partitions and seek generalization—not memorization.
+
+### 12.5 Observe learning curves and apply countermeasures
+
+Log **per epoch**:
+- Training and validation loss.
+- Overall and per-action accuracy/precision/recall.
+- Counts of critical violations such as attacking a surrendered target.
+- Model architecture, dataset version, grouping, seeds, normalization and training configuration.
+
+If validation loss increases while training loss decreases, investigate overfitting. Potential countermeasures: **early stopping** on validation metric (restore best checkpoint), simpler model/fewer parameters, weight decay, dropout (training only), more diverse legitimate training encounters, balanced class sampling and appropriately simulated status transitions. Apply one change at a time and re-evaluate.
+
+Avoid making the model more complex simply to increase training accuracy.
+
+### 12.6 Specific Colosseum generalization tests
+
+| Test | Training exposure | Evaluation challenge |
+|---|---|---|
+| New individual | Several known gladiators | A gladiator ID never present in training |
+| Changed status | Enemy attacking | The same enemy later surrendering |
+| Changed relationship | Former ally | Becomes hostile through game events |
+| Unfamiliar relationship | Known classes | Rival with a new trust score |
+| Multiple actors | Single-target encounters | Nearby ally + enemy + guard; no identity/status mixing |
+| Missing identity | All known persons | Unknown/unidentified actor |
+| New arena encounter | Previously seen fights | Completely held-out encounter |
+| Distribution shift | Usual positions/weapons | Different map position, health, weapon or numbers |
+
+A hard gameplay prohibition (for example, *never attack surrendered targets*) should be enforced by a **deterministic rule/validator after inference**, not entrusted only to probabilistic model performance.
+
+### 12.7 Acceptance checklist before exporting ONNX
+
+- [ ] Split by meaningful independent groups; test no encounter leakage.
+- [ ] Test held-out characters/pairs and unseen encounters.
+- [ ] Record training/validation learning curves and best selected epoch.
+- [ ] Both absolute validation quality and generalization gap meet preregistered criteria.
+- [ ] Per-role/per-status metrics and failure-case examples reviewed.
+- [ ] Dedicated surrender/unknown/identity transition tests pass.
+- [ ] Training records reproduce model inputs, configuration and weights as closely as supported.
+- [ ] Final untouched test set evaluated and archived.
+- [ ] PyTorch ↔ ONNX numerical parity still passes after selecting the best model.
+- [ ] C++/Blueprint deterministic constraints and regression tests pass.
+
+**Updated lifecycle memory aid:** **Test → Split → Train → Validate → Prevent overfitting → Test unseen cases → Export ONNX → Verify C++ → Test Blueprint → Review/commit.**
