@@ -1,5 +1,7 @@
 # AI Model Development and Integration with C++ and Unreal Engine — Beginner's Guide
 
+> **Hands-on companion tutorial:** [Create Your First Gladiator AI Model — Step-by-Step TDD, Training, Overfitting and ONNX](AI_Model_Creation_Hands_On_TDD.md). This contains the copyable PyCharm/PowerShell instructions, Python files, pytest tests, training pipeline, model-quality gates, export and parity checks.
+
 > **Branch:** `albert` · **Last updated:** 2026-11-21 · **Status:** Architecture and test-first development guide (not an implementation claim)
 >
 > **Goal:** Develop reusable trained AI models for Colosseum characters, run inference through C++ in Unreal Engine, and let Blueprints execute actions. **Test-driven development (TDD) is required throughout.**
