@@ -36,7 +36,7 @@ These rules are teaching assumptions, not verified gameplay strategy. Enforce pr
 
 Use an isolated folder; do **not** modify shared \`.umap\` or \`.uasset\` assets.
 
-\`\`\`text
+```text
 GladiatorAIPractice/
 ├── model.py
 ├── train.py
@@ -44,15 +44,15 @@ GladiatorAIPractice/
 ├── tests/
 │   └── test_model.py
 └── models/                    # generated checkpoint
-\`\`\`
+```
 
 In the PyCharm PowerShell terminal, navigate to \`GladiatorAIPractice\` (paste **commands only**, without the \`PS ...>\` prompt).
 
-\`\`\`powershell
+```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install torch pytest
-\`\`\`
+```
 
 Use a supported installed Python version if \`py -3.13\` is unavailable. A CPU installation is sufficient for this tiny demo. Check the official [PyTorch installation selector](https://pytorch.org/get-started/locally/) for platform-specific requirements.
 
@@ -60,7 +60,7 @@ Use a supported installed Python version if \`py -3.13\` is unavailable. A CPU i
 
 Create \`tests/test_model.py\`:
 
-\`\`\`python
+```python
 import torch
 from model import GladiatorBrain
 
@@ -71,13 +71,13 @@ def test_network_shape():
     scores = model(inputs)
     assert scores.shape == (2, 3)
     assert torch.isfinite(scores).all()
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_model.py -v
-\`\`\`
+'``
 
 **Expected RED:** \`GladiatorBrain\` does not exist yet. This is a useful failing test.
 
@@ -85,7 +85,7 @@ Run:
 
 Create \`model.py\`:
 
-\`\`\`python
+```python
 from torch import nn
 
 
@@ -102,15 +102,15 @@ class GladiatorBrain(nn.Module):
 
     def forward(self, x):
         return self.network(x)
-\`\`\`
+```
 
 This is a **3 → 8 → 8 → 3** multilayer perceptron. \`ReLU\` makes hidden layers nonlinear. The last layer produces three raw logits; \`CrossEntropyLoss\` expects raw logits, not Softmax probabilities.
 
 Run the test again:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe -m pytest -v
-\`\`\`
+```
 
 **Expected GREEN:** one passed. The network exists, but it is **not trained** and the test does **not** prove its decisions are good.
 
@@ -118,7 +118,7 @@ Run the test again:
 
 Create \`train.py\`:
 
-\`\`\`python
+```python
 from pathlib import Path
 
 import torch
@@ -198,13 +198,13 @@ print(f"Held-out test accuracy: {accuracy:.1%}")
 Path("models").mkdir(exist_ok=True)
 torch.save(model.state_dict(), "models/gladiator_v001.pt")
 print("Saved models/gladiator_v001.pt")
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe train.py
-\`\`\`
+```
 
 **Visible result:** a count of 1,000 generated examples, periodic losses, final held-out test accuracy, and \`models/gladiator_v001.pt\`.
 
@@ -214,7 +214,7 @@ Run:
 
 Create \`predict.py\`:
 
-\`\`\`python
+```python
 import torch
 from model import GladiatorBrain
 
@@ -239,13 +239,13 @@ with torch.no_grad():
 
 print("Predicted action:", actions[predicted_index])
 print("Action probabilities:", probabilities[0].tolist())
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe predict.py
-\`\`\`
+```
 
 **Expected rule label:** RETREAT. The **learned prediction** is whatever the actual trained model produces. If it disagrees, investigate model quality rather than claiming it passed.
 
@@ -278,7 +278,7 @@ For hard gameplay prohibitions, use deterministic safeguards in C++ after infere
 
 The toy network has no explicit actor identity or relationship. In the real Unreal architecture, separate:
 
-\`\`\`text
+```text
 AI Perception detects Actor
      → identity (persistent character ID)
      → role and faction
@@ -288,7 +288,7 @@ AI Perception detects Actor
      → candidate action
      → gameplay rule validator
      → Blueprint / StateTree action
-\`\`\`
+```
 
 New role/status/relationship inputs change the model schema and usually require re-training. **Do not** feed a numeric character ID as an ordered continuous input. Instead look up meaningful relationships and status from the identity/memory system.
 
@@ -306,11 +306,11 @@ This guide stops at a saved PyTorch model. For exact ONNX export, TDD and Unreal
 
 Work only under the \`albert\` branch. Keep generated model weights and data in dedicated directories and decide whether to use Git LFS for versioned model artifacts. Do not touch production Blueprints/maps while experimenting.
 
-\`\`\`powershell
+```powershell
 git fetch origin
 git switch albert
 git pull --ff-only origin albert
-\`\`\`
+```
 
 Before committing Python, run \`pytest\`, inspect \`git diff\` and \`git status\`, and stage only intended files. If this documentation is already present remotely, do not commit it again.
 
