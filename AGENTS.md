@@ -28,3 +28,6 @@ Record actual tool/model when known, contributions, AI-use log ID if established
 
 ## Unreal teamwork
 Use isolated test maps, coordinate Git LFS locks for binary assets, avoid unrelated .uasset/.umap changes, and maintain high cohesion and low coupling between C++, Blueprint and model. Keep true hidden opponent statistics separate from perception-based inference. Do not commit credentials or unapproved generated data/models.
+
+## Live issue index and planning records
+Use [actual issue index](Knowledge/UnrealEngine/AI_Model/Planning/GITHUB_ISSUE_WORKFLOW.md), [progress](Knowledge/UnrealEngine/AI_Model/Planning/SPRINT_PROGRESS.md), [backlog](Knowledge/UnrealEngine/AI_Model/Planning/PRODUCT_BACKLOG.md) and [AI-use log](Knowledge/UnrealEngine/AI_Model/AI_USE_LOG.md). Governance changes reference verified #1 when relevant. Sprint S01 is not authorized by setup approval. The bootstrap exception has ended.
