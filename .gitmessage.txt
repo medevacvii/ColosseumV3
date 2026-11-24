@@ -1,0 +1,61 @@
+# ColosseumV3 / AI-model Git commit message template
+# Subject format: type(scope): imperative summary (ideally <=72 chars).
+# Types: feat, fix, docs, test, refactor, chore, build, ci, perf
+# Scopes: ai, features, model, perception, memory, onnx, cpp, blueprint, tests, docs, git
+# Remove unused placeholders. Commit messages become part of PUBLIC Git history.
+
+type(scope): explain the change briefly
+
+Why:
+- Explain the problem this change addresses.
+
+Changes:
+- Describe the actual staged changes.
+- Note genuine design-pattern changes, or N/A.
+
+Testing:
+- RED: Command and observed failure, or Not run / N/A.
+- GREEN: Command and observed result, or Not run / N/A.
+- REFACTOR: Regression command and observed result, or Not run / N/A.
+
+Documentation:
+- PEP 257 / Google-style docstrings: Verified / N/A / Not checked.
+- C++ / Unreal documentation: Verified / N/A / Not checked.
+- AGENTS.md requirements: Verified / N/A / Not checked.
+
+Model and Integration Validation:
+- Dataset/model/schema version, leakage and overfitting checks: results / N/A / Not run.
+- ONNX parity, Unreal automation and asset impact: results / N/A / Not run.
+
+Privacy and Security:
+- Confirm whether personal records, credentials, or restricted project assets are absent.
+- State any special privacy/security considerations.
+
+AI Assistance:
+- Tool: Tool and model, or None.
+- Contribution: Specific help received, or None.
+- AI Use Log ID: Existing entry ID, or N/A.
+- Product owner review status: Accepted / Pending / N/A.
+
+Related:
+- Sprint: Confirmed S01–S12 sprint/story ID(s) and planned dates, or N/A.
+- Issue/PR: Agent-confirmed GitHub issue URL(s) / PR, not a guessed number.
+- Agent issue search: Verified open/closed issues and reused matching issue; or report missing/blocked issue.
+
+# MANDATORY AGENT STEPS BEFORE ANY COMMIT (Git CLI, GitHub API or PR):
+# Search GitHub open AND closed issues for the current sprint/task.
+# Confirm exact number, scope, state and acceptance criteria; reuse matches.
+# If none matches, create only if authorized, otherwise stop and flag for review.
+# Do not ask the product owner to look up or type issue numbers.
+# Remove all placeholder references; add one REAL reference per affected issue.
+# Bootstrap setup only: if no matching issue exists, record N/A and lookup result.
+# For subsequent work, follow AGENTS.md before committing.
+# Partial, incomplete, review-pending, or open issue: Refs #N (non-closing).
+# Entire issue verified and required product owner read/accept recorded: Closes #N.
+# Closing keywords can auto-close on main. Never close a grouped issue early.
+# For API commits, agents MUST type references into the API commit message.
+# For PRs, also include issue references in the PR description.
+# After committing, report verified SHA, issue link, test results and AI status.
+# Always preserve TDD, privacy, Sunday rest, sprint schedule and review rules.
+
+Refs #N
