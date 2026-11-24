@@ -8,13 +8,13 @@
 
 ## 0. Memory aid and architectural rule
 
-\`\`\`text
+```text
 WHO is it?        Unreal Actor identity / persistent character ID
 WHAT are they?    Role, faction, relationship and current status
 WHAT to do?       Trained model scores candidate actions
 IS IT ALLOWED?    Deterministic gameplay rule / safety validator
 HOW to do it?     Unreal C++ + Blueprint / StateTree / navigation / animation
-\`\`\`
+```
 
 For a game NPC, do not train computer vision to recognize an actor already identified by Unreal. Use Actor references for runtime targets; persistent IDs for memory. **Do not feed numeric persistent IDs as continuous model features.** Read relationships from the memory store and pass meaningful features to the model.
 
@@ -26,7 +26,7 @@ For a game NPC, do not train computer vision to recognize an actor already ident
 
 **Step 2:** Create the directory \`MachineLearning\` at the repository root. Inside it, create folders \`gladiator_ai\`, \`tests\`, \`models\`, and \`reports\`. Inside \`gladiator_ai\` and \`tests\`, make an empty \`__init__.py\` file.
 
-\`\`\`text
+```text
 MachineLearning/
 ├── gladiator_ai/
 │   ├── __init__.py
@@ -43,17 +43,17 @@ MachineLearning/
 ├── train.py
 ├── export_onnx.py
 └── verify_onnx.py
-\`\`\`
+```
 
 **Step 3:** In the PyCharm Terminal use the **actual repository root**, and enter only the commands—do not paste the \`PS C:\\...\` prompt.
 
-\`\`\`powershell
+```powershell
 cd MachineLearning
 py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install torch numpy pytest onnx onnxruntime onnxscript
 .\.venv\Scripts\python.exe -m pytest --version
-\`\`\`
+```
 
 If Python 3.13 is not installed, replace \`py -3.13\` with an installed supported Python version. Use PyCharm Settings → Project → Python Interpreter and select \`MachineLearning\\.venv\\Scripts\\python.exe\` if desired.
 
@@ -63,22 +63,22 @@ If Python 3.13 is not installed, replace \`py -3.13\` with an installed supporte
 
 Features are **11 numbers**, in exactly this order:
 
-\`\`\`text
+```text
 0 role_emperor          1 role_gladiator
 2 role_guard            3 role_unknown
 4 relationship_friendly 5 relationship_hostile
 6 relationship_unknown  7 target_injured
 8 target_attacking      9 target_surrendered
 10 self_health_normalized
-\`\`\`
+```
 
 Roles and relationships are one-hot encoded (one active column per category). Status flags are 0/1; health is 0–1.
 
 Actions are **five indices**, fixed permanently for schema version 1:
 
-\`\`\`text
+```text
 0 OBSERVE   1 RESPECT   2 ASSIST   3 DEFEND   4 RETREAT
-\`\`\`
+```
 
 An input shape is \`[batch_size, 11]\`; output is \`[batch_size, 5]\` raw **logits** (not probabilities). Interpret the highest logit index; use softmax only when you actually need probabilities. Validate inputs and version the feature schema. Unreal C++ must reproduce the **exact same feature order, normalization and action index mapping**.
 
@@ -86,7 +86,7 @@ An input shape is \`[batch_size, 11]\`; output is \`[batch_size, 5]\` raw **logi
 
 Create \`tests/test_features.py\`:
 
-\`\`\`python
+```python
 import pytest
 from gladiator_ai.features import ACTIONS, encode
 
@@ -105,13 +105,13 @@ def test_action_contract_is_stable():
 def test_invalid_health_is_rejected():
     with pytest.raises(ValueError):
         encode("gladiator", "hostile", False, True, False, 1.5)
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_features.py -v
-\`\`\`
+'``
 
 **Expected RED:** import fails because \`gladiator_ai.features\` has not been implemented. This is intentional.
 
@@ -119,7 +119,7 @@ Run:
 
 Create \`gladiator_ai/features.py\`:
 
-\`\`\`python
+```python
 import math
 import numpy as np
 
@@ -141,7 +141,7 @@ def encode(role, relationship, injured, attacking, surrendered, self_health):
         + [float(injured), float(attacking), float(surrendered), float(self_health)]
     )
     return np.asarray(values, dtype=np.float32)
-\`\`\`
+```
 
 Run the exact same pytest command. **Expected GREEN:** 3 passed.
 
@@ -162,7 +162,7 @@ Do not confuse these synthetic labels with authentic gameplay performance. For a
 
 Create \`tests/test_data.py\` **first**:
 
-\`\`\`python
+```python
 from gladiator_ai.data import expected_action, generate_encounters, split_encounters
 
 
@@ -194,11 +194,11 @@ def test_encounters_never_leak_between_splits():
     assert sets[0].isdisjoint(sets[2])
     assert sets[1].isdisjoint(sets[2])
     assert all(sets)
-\`\`\`
+```
 
 Run pytest now (RED), then create \`gladiator_ai/data.py\`:
 
-\`\`\`python
+```python
 import random
 from .features import ACTIONS, ROLES, RELATIONSHIPS, encode
 
@@ -256,13 +256,13 @@ def split_encounters(records, seed=120):
         [r for r in records if r["encounter_id"] in valid_ids],
         [r for r in records if r["encounter_id"] in test_ids],
     )
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe -m pytest -v
-\`\`\`
+```
 
 **Important:** These synthetic encounters intentionally include simplified, sometimes unrealistic combinations of status. In the actual simulation, constrain impossible states (such as simultaneous attacking and surrendering) and test those constraints. The \`target_id\` is present only as encounter metadata; **it is not a neural-network feature**.
 
@@ -272,7 +272,7 @@ For stronger generalization claims, add a separate **held-out target ID**, targe
 
 Create \`tests/test_model.py\`:
 
-\`\`\`python
+```python
 import torch
 from gladiator_ai.model import GladiatorBrain
 
@@ -282,11 +282,11 @@ def test_model_shape_and_finite_values():
     logits = model(torch.zeros((2, 11), dtype=torch.float32))
     assert logits.shape == (2, 5)
     assert torch.isfinite(logits).all()
-\`\`\`
+```
 
 Run pytest (RED), then create \`gladiator_ai/model.py\`:
 
-\`\`\`python
+```python
 import torch.nn as nn
 
 
@@ -303,7 +303,7 @@ class GladiatorBrain(nn.Module):
 
     def forward(self, observations):
         return self.network(observations)
-\`\`\`
+```
 
 Run pytest again (GREEN). This only proves model shape, **not that the model is smart**.
 
@@ -311,7 +311,7 @@ Run pytest again (GREEN). This only proves model shape, **not that the model is 
 
 Create \`train.py\`:
 
-\`\`\`python
+```python
 import copy
 import json
 import random
@@ -427,13 +427,13 @@ torch.save(model.state_dict(), "models/GladiatorBrain_v001.pt")
 Path("reports/training_history.json").write_text(json.dumps(history, indent=2))
 Path("reports/evaluation.json").write_text(json.dumps(report, indent=2))
 print(json.dumps(report, indent=2))
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe train.py
-\`\`\`
+```
 
 **Visible result:** Terminal prints training and validation accuracy every 20 epochs and a final report. You will also see:
 - \`models/GladiatorBrain_v001.pt\`: trained PyTorch weights.
@@ -448,18 +448,18 @@ Read \`reports/evaluation.json\`. The key question is: **Does high training perf
 
 Simple warning signal:
 
-\`\`\`text
+```text
 Train accuracy  99%
 Valid accuracy  72%
                ↑
 Large gap = possible overfitting
-\`\`\`
+```
 
 If both training and validation are poor, suspect **underfitting** instead. Neither a small gap nor a high single score guarantees a useful model.
 
 Write a **post-training acceptance test** that reads the saved report; it must not retrain a random model on each pytest run:
 
-\`\`\`python
+```python
 # tests/test_evaluation_report.py
 import json
 from pathlib import Path
@@ -474,7 +474,7 @@ def test_model_generalization_gate():
     report = json.loads(path.read_text())
     assert report["validation_accuracy"] >= 0.90
     assert report["train_accuracy"] - report["validation_accuracy"] <= 0.10
-\`\`\`
+```
 
 **The 90% and 10-percentage-point thresholds are example targets.** Agree on project requirements *before* evaluating. Also check per-class recall, confusion matrix, class counts, and cases involving surrender, unknown targets and rare roles. A rare class can fail while accuracy appears high.
 
@@ -486,7 +486,7 @@ Good countermeasures include **early stopping**, a smaller model, weight decay, 
 
 Create \`export_onnx.py\`:
 
-\`\`\`python
+```python
 from pathlib import Path
 import torch
 
@@ -508,13 +508,13 @@ torch.onnx.export(
     dynamo=True,
 )
 print("Exported models/GladiatorBrain_v001.onnx")
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe export_onnx.py
-\`\`\`
+```
 
 **Expected:** The ONNX file is created. Some exporter versions may also produce sidecar files or console messages; inspect any errors instead of assuming export worked.
 
@@ -522,7 +522,7 @@ Run:
 
 Create \`verify_onnx.py\`:
 
-\`\`\`python
+```python
 import numpy as np
 import onnxruntime as ort
 import torch
@@ -561,13 +561,13 @@ np.testing.assert_allclose(pytorch_logits, onnx_logits, rtol=1e-4, atol=1e-5)
 decision = ACTIONS[int(onnx_logits.argmax(axis=1)[0])]
 print("PASS: PyTorch and ONNX outputs match within tolerance")
 print("Selected action:", decision)
-\`\`\`
+```
 
 Run:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe verify_onnx.py
-\`\`\`
+```
 
 **Expected:** Numerical parity passes and prints a decision. A trained model may still make a poor decision! The predicted action here is an **observation**, not proof that model-quality criteria were met. Run separate tests for multiple examples and model-quality gates.
 
@@ -575,7 +575,7 @@ Run:
 
 For the game, don't make a surrender prohibition depend only on the neural model. Keep an authoritative validator **after** inference:
 
-\`\`\`text
+```text
 NNE predicts ATTACK
           |
           v
@@ -585,7 +585,7 @@ target surrendered?
           +--- YES ---> block attack; select safe fallback
           |
           +--- NO ----> allowed action proceeds
-\`\`\`
+```
 
 Write an Unreal C++ Automation Test **first**: \`Surrendered target -> Attack rejected\`. The exact combat implementation is project-specific. Keep it in C++ and expose clean decision/action interfaces to Blueprint.
 
@@ -606,7 +606,7 @@ Write an Unreal C++ Automation Test **first**: \`Surrendered target -> Attack re
 
 ## 13. Version and preserve the trained brain
 
-\`\`\`text
+```text
 MachineLearning/
 ├── models/
 │   ├── GladiatorBrain_v001.pt
@@ -614,7 +614,7 @@ MachineLearning/
 └── reports/
     ├── training_history.json
     └── evaluation.json
-\`\`\`
+```
 
 Also record a machine-readable schema description, dataset-generation/training version, relevant dependency versions, chosen evaluation thresholds and model hash for traceability. Decide as a team whether binary models should use Git LFS or external artifacts; avoid accidentally committing massive checkpoints to ordinary Git. \`.venv\`, generated caches and temporary results generally belong in \`.gitignore\`.
 
