@@ -4,7 +4,7 @@ Updated 2026-11-24 | Branch: AI-model | Status: pending product owner review
 Governance: [Issue #1](https://github.com/medevacvii/ColosseumV3/issues/1)
 
 ## Start here
-This is the project's library catalogue: use it to find the right guide, not as a substitute for the guide itself. It indexes all 21 existing Markdown files found in the AI-model branch tree before this index was added. Other branches are outside this inventory.
+This is the project's library catalogue: use it to find the right guide, not as a substitute for the guide itself. It indexes the AI-model branch documentation, including the new system architecture specification. Other branches are outside this inventory.
 
 **New to Unreal?** Start with the beginner guide. **New to AI?** Start with neural networks. **Joining the development team?** Read AGENTS, the backlog and the definition of done before changing anything. **Reviewing progress?** Open sprint progress and the issue index.
 
@@ -23,6 +23,7 @@ This is the project's library catalogue: use it to find the right guide, not as 
 | [First neural network without data](../Creating_First_Neural_Network_Without_Data_Dummies_Guide.md) | Starting with synthetic examples |
 | [Hands-on AI creation with TDD](../AI_Model_Creation_Hands_On_TDD.md) | Practical model development and tests |
 | [AI development, C++, Unreal and TDD](../AI_Model_Development_CPP_Unreal_TDD_Guide.md) | Integration learning guide |
+| [System architecture specification](SYSTEM_ARCHITECTURE_SPECIFICATION.md) | Proposed system-wide engineering blueprint and contracts |
 | [Reflection context framework](REFLECTION_CONTEXT_FRAMEWORK.md) | Proposed architecture, interfaces, perception, memory, ONNX and validation |
 
 ## 3. Project planning and governance
@@ -76,7 +77,7 @@ These are proposed future specifications, not approved new work or claims that e
 
 | Proposed document | Suggested timing | Related issue |
 |---|---|---|
-| Formal system architecture specification | Before S01 | #1 |
+| [System architecture specification](SYSTEM_ARCHITECTURE_SPECIFICATION.md) — drafted, review pending | Before S01 | #1 |
 | Architecture decision records and template | Before S01 | #1 |
 | Team integration agreement | Before S01 | #1 |
 | Comprehensive testing strategy | S01 | #2 |
