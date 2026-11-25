@@ -1,6 +1,6 @@
 # Sprint progress
 
-Setup scope approved; implementation not authorized. All 48 stories unchecked and no sprint started. Setup output review pending.
+Setup scope approved; implementation not authorized. All 48 stories unchecked and no sprint started. Setup output read and explicitly accepted on 2026-11-24; implementation remains unauthorized.
 
 | Sprint | Issue | Status | Accepted stories | Evidence |
 |---|---|---|---|---|
